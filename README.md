@@ -28,6 +28,8 @@ Note that only Rails 4 is supported as of this writing.  Rails 3 support is comi
 
 ## Usage
 
+See `Getting_Started.md` for a detailed example.
+
 Generate the required classes with `rails generate event_sourced_record`:
 
     rails generate event_sourced_record Subscription \
