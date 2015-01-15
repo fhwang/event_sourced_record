@@ -23,6 +23,16 @@ module EventSourcedRecord::Event
     end
   end
 
+  def respond_to?(meth, include_all = false)
+    if event_type_config && event_type_config.attributes.include?(meth)
+      true
+    elsif event_type_config && event_type_config.attributes.any? { |a| "#{a}=" == meth }
+      true
+    else
+      super
+    end
+  end
+
   private
 
   def ensure_data

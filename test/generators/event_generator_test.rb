@@ -20,9 +20,16 @@ class EventSourcedRecord::EventGeneratorTest < Rails::Generators::TestCase
   end
 
   test "creates a migration for the event class" do
-    assert @generate_calls['migration'].include?(
-      "create_subscription_events subscription_uuid:string:index event_type:string data:text created_at:datetime"
-    )
+    ar_major_version = ActiveRecord::VERSION::MAJOR
+    if ar_major_version >= 4
+      assert @generate_calls['migration'].include?(
+        "create_subscription_events subscription_uuid:string:index event_type:string data:text created_at:datetime"
+      )
+    else
+      assert_migration("db/migrate/create_subscription_events.rb") do |contents|
+        assert_match(/t.string :event_type/, contents)
+      end
+    end
   end
 
   test "creates a model for the event class" do

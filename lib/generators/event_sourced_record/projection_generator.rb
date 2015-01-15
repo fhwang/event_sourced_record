@@ -1,19 +1,34 @@
-class EventSourcedRecord::ProjectionGenerator < Rails::Generators::NamedBase
+require 'generators/event_sourced_record'
+
+class EventSourcedRecord::ProjectionGenerator < ActiveRecord::Generators::Base
   source_root File.expand_path('../templates', __FILE__)
   argument :attributes, 
     :type => :array, :default => []
 
   def create_migration_file
-    generate(
-      "migration", "create_#{projection_table_name} #{migration_attributes}"
-    )
+    ar_major_version = ActiveRecord::VERSION::MAJOR
+    if ar_major_version >= 4
+      generate(
+        "migration", "create_#{projection_table_name} #{migration_attributes}"
+      )
+    else
+      migration_template(
+        "projection_migration.ar3.rb", 
+        "db/migrate/create_#{projection_table_name}.rb"
+      )
+    end
   end
 
   def create_model_file
+    ar_major_version = ActiveRecord::VERSION::MAJOR
     template(
-      'projection_model.rb', 
+      "projection_model.ar#{ar_major_version}.rb", 
       File.join('app/models', class_path, "#{projection_file_name}.rb")
     )
+  end
+
+  def attributes_with_index
+    attributes.select { |a| a.has_index? || (a.reference? && options[:indexes]) }
   end
 
   hook_for :test_framework, as: :model
@@ -31,6 +46,9 @@ class EventSourcedRecord::ProjectionGenerator < Rails::Generators::NamedBase
     attr_strings.join(' ')
   end
 
+  def projection_migration_class_name
+    "create_#{projection_table_name}".camelize
+  end
 
   def projection_class_name
     class_name
