@@ -36,6 +36,10 @@ class EventSourcedRecord::EventGeneratorTest < Rails::Generators::TestCase
     assert_file("app/models/subscription_event.rb") do |contents|
       assert_match(/class SubscriptionEvent < ActiveRecord::Base/, contents)
       assert_match(/include EventSourcedRecord::Event/, contents)
+      assert_match(/belongs_to :subscription,/, contents)
+      assert_match(
+        /foreign_key: 'subscription_uuid', primary_key: 'uuid'/, contents
+      )
       assert_match(/event_type :creation do/, contents)
     end
   end

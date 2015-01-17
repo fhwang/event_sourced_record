@@ -35,6 +35,14 @@ class EventSourcedRecord::ProjectionGenerator < ActiveRecord::Generators::Base
 
   private
 
+  def event_class_name
+    projection_class_name + 'Event'
+  end
+
+  def has_many_foreign_key
+    file_name + '_uuid'
+  end
+
   def migration_attributes
     attr_strings = attributes.map { |attr|
       attr_string = attr.name

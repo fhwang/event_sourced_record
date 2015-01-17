@@ -39,6 +39,10 @@ class EventSourcedRecord::ProjectionGeneratorTest < Rails::Generators::TestCase
       assert_match(/class Subscription < ActiveRecord::Base/, contents)
       assert_match(/validates :uuid, uniqueness: true/, contents)
       assert_no_match(/attr_accessible :bottles_left/, contents)
+      assert_match(/has_many :events,/, contents)
+      assert_match(/class_name: 'SubscriptionEvent',/, contents)
+      assert_match(/foreign_key: 'subscription_uuid',/, contents)
+      assert_match(/primary_key: 'uuid'/, contents)
     end
   end
 end

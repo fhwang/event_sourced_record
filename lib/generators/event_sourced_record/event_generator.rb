@@ -39,6 +39,14 @@ class EventSourcedRecord::EventGenerator < ActiveRecord::Generators::Base
 
   private
 
+  def belongs_to_foreign_key
+    belongs_to_name +  '_uuid'
+  end
+
+  def belongs_to_name
+    file_name.gsub(/_event/, '')
+  end
+
   def event_migration_class_name
     "create_#{event_table_name}".camelize
   end

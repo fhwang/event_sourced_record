@@ -45,7 +45,10 @@ This takes the same attribute list as `rails generate model`, but generates a nu
 This is the model that you'd create in a typical Rails application, but here you'll find that we don't do much with it directly.
 
     class Subscription < ActiveRecord::Base
-      has_many :subscription_events
+      has_many :events, 
+        class_name: 'SubscriptionEvent', 
+        foreign_key: 'subscription_uuid', 
+        primary_key: 'uuid'
 
       validates :uuid, uniqueness: true
     end
@@ -62,6 +65,9 @@ You might never end up showing this model to end-users, but in fact it's the aut
 
     class SubscriptionEvent < ActiveRecord::Base
       include EventSourcedRecord::Event
+
+      belongs_to :subscription, 
+        foreign_key: 'subscription_uuid', primary_key: 'uuid'
 
       event_type :creation do
         # attributes :user_id
@@ -107,18 +113,14 @@ Above, we specified that subscriptions will have `user_id`, `bottles_per_shipmen
 
 ### Define the creation event type
 
-Fill out the `event_type` block in `subscription_event.rb`:
+Fill out the `event_type` block in `SubscriptionEvent`:
 
-    class SubscriptionEvent < ActiveRecord::Base
-      include EventSourcedRecord::Event
+    event_type :creation do
+      attributes :bottles_per_shipment, :bottles_purchased, :user_id
 
-      event_type :creation do
-        attributes :bottles_per_shipment, :bottles_purchased, :user_id
-
-        validates :bottles_per_shipment, presence: true, numericality: true
-        validates :bottles_purchased, presence: true, numericality: true
-        validates :user_id, presence: true
-      end
+      validates :bottles_per_shipment, presence: true, numericality: true
+      validates :bottles_purchased, presence: true, numericality: true
+      validates :user_id, presence: true
     end
     
 This lets you build and save events with the attributes `bottles_per_shipment`,
@@ -134,21 +136,17 @@ This lets you build and save events with the attributes `bottles_per_shipment`,
 
 ### Handle the creation in the calculator
 
-Fill out the `advance_creation` method in `subscription_calculator.rb`:
+Fill out the `advance_creation` method in `SubscriptionCalculator`:
 
-    class SubscriptionCalculator < EventSourcedRecord::Calculator
-      events :subscription_events
-
-      def advance_creation(event)
-        @subscription.user_id = event.user_id
-        @subscription.bottles_per_shipment = event.bottles_per_shipment
-        @subscription.bottles_left = event.bottles_purchased
-      end
+    def advance_creation(event)
+      @subscription.user_id = event.user_id
+      @subscription.bottles_per_shipment = event.bottles_per_shipment
+      @subscription.bottles_left = event.bottles_purchased
     end
     
 Note that for `user_id` and `bottles_per_shipment` we simply copy the field from the event to the subscription, but in the case of `bottles_purchased`, that is translated to `Subscription#bottles_left`.  This field will go up and down over time.
 
-### Create a subscription (indirectly)
+### Create a subscription, indirectly
 
 Creating a subscription is a matter of creating the event itself:
 
@@ -178,26 +176,22 @@ This is a lot of indirection, which you don't have to understand right away.  Wh
 
 Occasionally, subscribers will want to change their settings.  Let's say in this case we'll only allow them to change `bottles_per_shipment`.  So we add a new event type in `SubscriptionEvent`:
 
-    class SubscriptionEvent < ActiveRecord::Base
-      event_type :change_settings do
-        attributes :bottles_per_shipment
+    event_type :change_settings do
+      attributes :bottles_per_shipment
 
-        validates :bottles_per_shipment, numericality: true
-      end
+      validates :bottles_per_shipment, numericality: true
     end
     
-And we add a method to handle this new event type in the calculator:
+And we add a method to handle this new event type to `SubscriptionCalculator`:
 
-    class SubscriptionCalculator < EventSourcedRecord::Calculator
-      def advance_change_settings(event)
-        @subscription.bottles_per_shipment = event.bottles_per_shipment
-      end
+    def advance_change_settings(event)
+      @subscription.bottles_per_shipment = event.bottles_per_shipment
     end
 
 If we want to change the subscription from the last example from 1 bottle per shipment to 2 bottles per shipment, this looks like this:
 
     subscription.bottles_per_shipment # 1
-    SubscriptionEvent.change_settings.create!(
+    subscription.events.change_settings.create!(
       subscription_uuid: subscription.uuid, bottles_per_shipment: 2
     )
     subscription.reload
@@ -217,6 +211,8 @@ In `subscription_calculator.rb` we make two changes.  First, we add `:shipments`
 
     class SubscriptionCalculator < EventSourcedRecord::Calculator
       events :subscription_events, :shipments
+      
+      # Other methods omitted
 
       def advance_shipment(shipment)
         @subscription.bottles_left -= shipment.num_bottles
@@ -263,7 +259,7 @@ Because you have designed `SubscriptionCalculator` to be idempotent, it is safe 
 
 ## Debugging Subscription in production
 
-The same process can work for fixing many bugs in production. Events themselves are usually a simple act of recording the user's intention.  Errors usually emerge in `SubscriptionCalculator`, which is responsible for the tougher work of interpreting a sequence of events.
+The same process can work for fixing many bugs in production. Events themselves are usually a simple act of recording the user's intention.  Errors usually emerge in the calculator, which is responsible for the tougher work of interpreting a sequence of events.
 
 So when you find a bug, you can often fix it via this process:
 
@@ -282,3 +278,4 @@ Because `SubscriptionCalculator` rebuilds a record in sequence, it's a piece of 
     sub_at_end_of_year = calculator.run(last_event_time: Date.new(2014,12,31))
     
 Note that the returned instance is un-saved, and shouldn't be saved to `subscriptions`, but it's now a piece of cake to take those values and send them to whatever reporting system you have in place.
+

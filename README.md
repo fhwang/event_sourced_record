@@ -47,6 +47,9 @@ The event model is an ActiveRecord model but it can act significantly different 
     class SubscriptionEvent < ActiveRecord::Base
       include EventSourcedRecord::Event
 
+      belongs_to :subscription, 
+        foreign_key: 'subscription_uuid', primary_key: 'uuid'
+
       event_type :creation do
         attributes :bottles_per_shipment, :bottles_purchased, :user_id
 
@@ -73,7 +76,10 @@ The easiest way to create these records is with the scopes that are automaticall
 The projection is the ActiveRecord model that is generated deterministically with the data in the timestamped events combined with the logic in the calculator.  Projections shouldn't have any code for modifying themselves, as that will be done externally.  Accordingly, projections end up being fairly small classes:
 
     class Subscription < ActiveRecord::Base
-      has_many :subscription_events
+      has_many :events, 
+        class_name: 'SubscriptionEvent', 
+        foreign_key: 'subscription_uuid', 
+        primary_key: 'uuid'
 
       validates :uuid, uniqueness: true
     end
