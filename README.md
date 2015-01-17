@@ -6,6 +6,10 @@ With Event Sourcing, every change to the state of an object is recorded as an im
 
 For more, see Martin Fowler's writeup of the pattern: http://martinfowler.com/eaaDev/EventSourcing.html
 
+## Requirements
+
+Event Sourced Record supports Rails 3.2 and higher.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -24,8 +28,6 @@ Event Sourced Record uses observers, so you'll need to add them to your Gemfile:
 
     gem 'rails-observers'
     
-Note that only Rails 4 is supported as of this writing.  Rails 3 support is coming soon.
-
 ## Usage
 
 See `Getting_Started.md` for a detailed example.

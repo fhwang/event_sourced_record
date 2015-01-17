@@ -4,6 +4,10 @@ This document is intended to teach you how to use Event Sourced Record, and expl
 
 Say you're starting a company that sells a shampoo subscription through the mail, and you want to use Event Sourcing to handle your subscription model.
 
+## Requirements
+
+Event Sourced Record supports Rails 3.2 and higher.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -22,8 +26,6 @@ Event Sourced Record uses observers, so you'll need to add them to your Gemfile:
 
     gem 'rails-observers'
     
-Note that only Rails 4 is supported as of this writing.  Rails 3 support is coming soon.
-
 ## Generate your classes
 
 You can use `rails generate event_sourced_record` to get started:
