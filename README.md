@@ -38,7 +38,9 @@ Generate the required classes with `rails generate event_sourced_record`:
           user_id:integer bottles_per_shipment:integer \
           bottles_left:integer
 
-The argument list is the same as with `rails generate model`.  This will generate the event model, the projection, the calculator, and the observer.
+The argument list is the same as with `rails generate model`.  This will
+generate the event model, the projection, the calculator, the observer,
+and a Rake file.
 
 ### Event model
 
@@ -130,6 +132,20 @@ If you use other models as events, simply add them to the `observe` method:
 
     class SubscriptionEventObserver < ActiveRecord::Observer
       observe :subscription_event, :shipment
+
+## Rake file
+
+The Rake file gives you a convenient command to rebuild every
+projection whenever necessary.  Since you'll be building the calculator
+to be idempotent, this will be a fairly safe operation.
+
+    namespace :subscription do
+      task :recalculate => :environment do
+        Subscription.all.each do |subscription| 
+          SubscriptionCalculator.new(subscription).run.save!
+        end
+      end
+    end
 
 ## Contributing
 

@@ -105,6 +105,20 @@ The generator registers this observer in `config/application.rb`:
 
     config.active_record.observers = :subscription_event_observer
 
+### A Subscription rake file
+
+The Rake file gives you a convenient command to rebuild every
+`Subscription` whenever necessary.  Since you'll be building
+`SubscriptionCalculator` to be idempotent, this will be a fairly safe operation.
+
+    namespace :subscription do
+      task :recalculate => :environment do
+        Subscription.all.each do |subscription| 
+          SubscriptionCalculator.new(subscription).run.save!
+        end
+      end
+    end
+
 ## Creation
 
 The generated code starts you out with a `creation` event, but we'll want to define it to get some use out of it.
@@ -248,12 +262,8 @@ Because `Subscription` is just a cache, event sourcing gives us a consistent way
 1. Write a migration if needed to add or change fields on the `subscriptions` table.
 1. Modify `SubscriptionCalculator` to take the new fields into account.
 1. Test, merge, and deploy to production.
-1. Rebuild every `Subscription`, with code such as:
-
-
-    Subscription.all.each do |subscription|
-      SubscriptionCalculator.new(subscription).run.save!
-    end
+1. Rebuild every `Subscription` by running `rake
+   subscription:recalculate`.
     
 Because you have designed `SubscriptionCalculator` to be idempotent, it is safe to re-run at any time you want -- for example, if you want to fill in a database column that didn't exist before.
 
@@ -266,7 +276,8 @@ So when you find a bug, you can often fix it via this process:
 1. Write a test to reproduce the bug.
 1. Fix `SubscriptionCalculator` to fix the bug.
 1. Merge and deploy to production.
-1. Rebuild every `Subscription` with the code above.
+1. Rebuild every `Subscription` by running `rake
+   subscription:recalculate`.
 
 Remember, `SubscriptionCalculator` is idempotent, so this process will fix all the records affected by the bug will leaving the others unchanged.  It will also spare you the agonizing effort of picking through data in `rails console` to guess which records are broken. Why go to the trouble?  Just re-run the whole thing and move on.
 

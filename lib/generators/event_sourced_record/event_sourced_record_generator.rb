@@ -33,9 +33,20 @@ class EventSourcedRecord::EventSourcedRecordGenerator < Rails::Generators::Named
     generate "event_sourced_record:projection", "#{file_name} #{projection_attributes}"
   end
 
+  def create_rake_file
+    template(
+      "event_sourced_record.rake", 
+      File.join("lib/tasks", class_path, "#{file_name}.rake")
+    )
+  end
+
   protected
 
   def calculator_class_name
     class_name + 'Calculator'
+  end
+
+  def projection_class_name
+    class_name
   end
 end
