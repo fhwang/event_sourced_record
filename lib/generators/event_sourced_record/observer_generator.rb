@@ -10,7 +10,8 @@ class EventSourcedRecord::ObserverGenerator < Rails::Generators::NamedBase
 
   def create_application_observer_hook
     application do
-      "config.active_record.observers = :#{file_name}"
+    "config.active_record.observers ||= []
+    config.active_record.observers << :#{file_name}"
     end
   end
 

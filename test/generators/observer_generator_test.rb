@@ -16,4 +16,10 @@ class EventSourcedRecord::ObserverGeneratorTest < Rails::Generators::TestCase
   test "creates a file for the observer" do
     assert_file("app/observers/subscription_event_observer.rb")
   end
+
+  test "appends to the observer list in application.rb" do
+    assert_file("config/application.rb") do |contents|
+      assert_match(/config.active_record.observers \|\|= \[\]/, contents)
+    end
+  end
 end
