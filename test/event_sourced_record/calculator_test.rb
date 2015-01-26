@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class EventSourcedRecord::CalculatorTest < MiniTest::Unit::TestCase
+class EventSourcedRecord::CalculatorTest < MiniTest::Test
   def setup
     @event = SubscriptionEvent.creation.create!(
       bottles_per_shipment: 1, bottles_purchased: 6, user_id: 12345
