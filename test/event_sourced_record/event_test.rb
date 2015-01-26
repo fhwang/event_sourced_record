@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class EventSourcedRecord::EventTest < MiniTest::Unit::TestCase
+class EventSourcedRecord::EventTest < MiniTest::Test
   def test_creation_auto_generates_uuid
     event = SubscriptionEvent.creation.new
     assert event.subscription_uuid
