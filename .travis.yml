@@ -1,0 +1,12 @@
+sudo: false
+
+cache: bundler
+
+rvm:
+  - 1.9
+  - 2.1
+
+gemfile:
+  - ci/ar32.gemfile
+  - ci/ar41.gemfile
+  - ci/ar42.gemfile
