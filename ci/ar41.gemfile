@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+gem 'activerecord', '~> 4.1.0'
+gem 'rails-observers'
+
+# Specify your gem's dependencies in event_sourced_record.gemspec
+gemspec path: '../'

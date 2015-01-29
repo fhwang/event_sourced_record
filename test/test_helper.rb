@@ -14,8 +14,14 @@ require 'generators/event_sourced_record'
 #require 'generators/event_sourced_record/projection_generator'
 require 'active_record'
 
+def test_db_dir
+  './tmp'
+end
+
+Dir.mkdir test_db_dir unless Dir.exists? test_db_dir
+
 ActiveRecord::Base.establish_connection(
-  :adapter => 'sqlite3', :database => 'tmp/test.sqlite3'
+  :adapter => 'sqlite3', :database => "#{test_db_dir}/test.sqlite3"
 )
 
 silence_stream(STDOUT) do
