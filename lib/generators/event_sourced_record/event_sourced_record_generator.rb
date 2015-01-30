@@ -13,7 +13,7 @@ class EventSourcedRecord::EventSourcedRecordGenerator < Rails::Generators::Named
   def create_event
     arguments = [
       "#{file_name}_uuid:string:index", "event_type:string", 
-      "data:text", "created_at:datetime"
+      "data:text", "created_at:datetime", "occurred_at:datetime"
     ].join(' ')
     generate "event_sourced_record:event", "#{file_name}_event #{arguments}"
   end
