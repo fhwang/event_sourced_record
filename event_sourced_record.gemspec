@@ -25,6 +25,7 @@ EventSourcedRecord uses Rails observers. If you are using Rails 4.0 or greater, 
   MESSAGE
 
   spec.add_dependency 'activemodel'
+  spec.add_dependency 'activerecord-immutable', '~> 0.0.3'
 
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake"

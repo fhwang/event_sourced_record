@@ -109,4 +109,14 @@ class EventSourcedRecord::EventTest < MiniTest::Unit::TestCase
       event.event_type = 'change_settings'
     end
   end
+
+  def test_events_are_immutable
+    event = SubscriptionEvent.creation.create!(
+      bottles_per_shipment: 1, bottles_purchased: 6, user_id: 999
+    )
+
+    assert_raises(ActiveRecord::ReadOnlyRecord) do
+      event.touch
+    end
+  end
 end
