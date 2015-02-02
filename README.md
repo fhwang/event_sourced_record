@@ -49,6 +49,8 @@ The event model is an ActiveRecord model but it can act significantly different 
     class SubscriptionEvent < ActiveRecord::Base
       include EventSourcedRecord::Event
 
+      serialize :data
+
       belongs_to :subscription, 
         foreign_key: 'subscription_uuid', primary_key: 'uuid'
 
@@ -73,6 +75,11 @@ The easiest way to create these records is with the scopes that are automaticall
       bottles_per_shipment: 1, bottles_purchased: 6, user_id: current_user.id
     )
     
+The event attributes are stored in the `data` column, which by default is
+serialized to a text field. If you'd prefer to use e.g. JSONB with PostgreSQL
+9.4+, just remove the call to `serialize` and modify the migration to use your
+preferred type.
+
 ## Projection
 
 The projection is the ActiveRecord model that is generated deterministically with the data in the timestamped events combined with the logic in the calculator.  Projections shouldn't have any code for modifying themselves, as that will be done externally.  Accordingly, projections end up being fairly small classes:

@@ -8,7 +8,6 @@ module EventSourcedRecord::Event
     model.validates :event_type, presence: true
     model.validate :validate_corrent_event_type
     model.validate :validate_by_event_type
-    model.serialize :data
   end
 
   def event_type

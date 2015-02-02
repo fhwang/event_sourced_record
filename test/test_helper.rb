@@ -55,6 +55,8 @@ end
 class SubscriptionEvent < ActiveRecord::Base
   include EventSourcedRecord::Event
 
+  serialize :data
+
   event_type :creation do
     attributes :bottles_per_shipment, :bottles_purchased, :user_id
 

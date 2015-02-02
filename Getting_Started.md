@@ -66,6 +66,8 @@ You might never end up showing this model to end-users, but in fact it's the aut
     class SubscriptionEvent < ActiveRecord::Base
       include EventSourcedRecord::Event
 
+      serialize :data
+
       belongs_to :subscription, 
         foreign_key: 'subscription_uuid', primary_key: 'uuid'
 
