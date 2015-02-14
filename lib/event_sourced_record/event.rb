@@ -1,4 +1,8 @@
+require 'active_record/immutable'
+
 module EventSourcedRecord::Event
+  include ActiveRecord::Immutable
+
   def self.included(model)
     model.cattr_accessor :_event_type_configs
     model.extend ClassMethods
