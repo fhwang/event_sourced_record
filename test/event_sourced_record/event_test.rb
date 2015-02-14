@@ -119,4 +119,21 @@ class EventSourcedRecord::EventTest < MiniTest::Unit::TestCase
       event.touch
     end
   end
+
+  def test_occurred_at_is_set_if_not_specified
+    event = SubscriptionEvent.creation.create!(
+      bottles_per_shipment: 1, bottles_purchased: 6, user_id: 999
+    )
+
+    assert event.occurred_at
+  end
+
+  def test_occurred_at_can_be_specified
+    event = SubscriptionEvent.creation.new(
+      occurred_at: Time.new(2003, 1, 24, 11, 33), bottles_per_shipment: 1,
+      bottles_purchased: 6, user_id: 999
+    )
+
+    assert_equal(Time.new(2003, 1, 24, 11, 33), event.occurred_at)
+  end
 end

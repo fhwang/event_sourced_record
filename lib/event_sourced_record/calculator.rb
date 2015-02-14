@@ -88,11 +88,19 @@ class EventSourcedRecord::Calculator
         conditions = {projection_name + '_id' => projection.id} if projection
       end
       conditions ? event_class.where(conditions).to_a : []
-    }.flatten.sort_by(&:created_at).reject { |evt|
+    }.flatten.sort_by{ |evt| occurrence_time(evt) }.reject { |evt|
       if last_event_time
-        evt.created_at > last_event_time
+        occurrence_time(evt) > last_event_time
       end
     }
+  end
+
+  def occurrence_time(event)
+    if event.respond_to?(:occurred_at) && event.occurred_at
+      event.occurred_at
+    else
+      event.created_at
+    end
   end
 
   def uuid_field

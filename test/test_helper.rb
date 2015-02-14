@@ -38,6 +38,7 @@ silence_stream(STDOUT) do
       t.string   "event_type"
       t.text     "data"
       t.datetime "created_at"
+      t.datetime "occurred_at"
     end
 
     create_table "subscriptions", force: true do |t|

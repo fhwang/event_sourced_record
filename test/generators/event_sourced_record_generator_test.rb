@@ -20,7 +20,7 @@ class EventSourcedRecord::EventSourcedRecordGeneratorTest < Rails::Generators::T
 
   test "calls the event generator" do
     assert @generate_calls['event_sourced_record:event'].include?(
-      "shampoo_subscription_event shampoo_subscription_uuid:string:index event_type:string data:text created_at:datetime"
+      "shampoo_subscription_event shampoo_subscription_uuid:string:index event_type:string data:text created_at:datetime occurred_at:datetime"
     )
   end
 

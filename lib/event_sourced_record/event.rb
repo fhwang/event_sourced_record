@@ -9,6 +9,7 @@ module EventSourcedRecord::Event
     model.after_initialize :ensure_data
     model.after_initialize :ensure_projection_uuid
     model.after_initialize :lock_event_type
+    model.before_validation :ensure_occurred_at, on: :create
     model.validates :event_type, presence: true
     model.validate :validate_corrent_event_type
     model.validate :validate_by_event_type
@@ -54,6 +55,10 @@ module EventSourcedRecord::Event
 
   def lock_event_type
     @event_type_locked = true
+  end
+
+  def ensure_occurred_at
+    self.occurred_at = Time.now unless occurred_at
   end
 
   def method_missing(meth, *args, &block)
