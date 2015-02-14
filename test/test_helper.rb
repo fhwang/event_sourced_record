@@ -46,6 +46,19 @@ silence_stream(STDOUT) do
       t.integer "bottles_left"
       t.string  "uuid"
     end
+
+    create_table "bottle_events", force: true do |t|
+      t.string   "bottle_uuid"
+      t.string   "event_type"
+      t.text     "data"
+      t.datetime "created_at"
+    end
+
+    create_table "bottles", force: true do |t|
+      t.integer "volume"
+      t.decimal "cost_price"
+      t.string  "uuid"
+    end
   end
 end
 
@@ -88,5 +101,30 @@ class SubscriptionCalculator < EventSourcedRecord::Calculator
 
   def advance_shipment(shipment)
     @subscription.bottles_left -= shipment.num_bottles
+  end
+end
+
+class BottleEvent < ActiveRecord::Base
+  include EventSourcedRecord::Event
+
+  serialize :data
+
+  event_type :purchase do
+    attributes :volume, :cost_price
+  end
+end
+
+class Bottle < ActiveRecord::Base
+  has_many :bottle_events
+
+  validates :uuid, uniqueness: true
+end
+
+class BottleCalculator < EventSourcedRecord::Calculator
+  events :bottle_events, :shipments
+
+  def advance_purchase(event)
+    @bottle.volume = event.volume
+    @bottle.cost_price = event.cost_price
   end
 end
