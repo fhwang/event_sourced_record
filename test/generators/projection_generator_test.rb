@@ -23,13 +23,14 @@ class EventSourcedRecord::ProjectionGeneratorTest < Rails::Generators::TestCase
     if ar_major_version >= 4
       assert(
         @generate_calls['migration'].include?(
-          "create_subscriptions user_id:integer bottles_per_shipment:integer bottles_left:integer uuid:string:uniq"
+          "create_subscriptions user_id:integer bottles_per_shipment:integer bottles_left:integer uuid:string:uniq created_at:datetime updated_at:datetime"
         ),
         @generate_calls.inspect
       )
     else
       assert_migration("db/migrate/create_subscriptions.rb") do |contents|
         assert_match(/t.integer :user_id/, contents)
+        assert_match(/t.timestamps/, contents)
       end
     end
   end

@@ -51,6 +51,8 @@ class EventSourcedRecord::ProjectionGenerator < ActiveRecord::Generators::Base
       attr_string
     }
     attr_strings << "uuid:string:uniq"
+    attr_strings << "created_at:datetime"
+    attr_strings << "updated_at:datetime"
     attr_strings.join(' ')
   end
 
