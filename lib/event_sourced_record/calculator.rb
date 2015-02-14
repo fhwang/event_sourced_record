@@ -1,10 +1,10 @@
 class EventSourcedRecord::Calculator
   def self.events(*event_symbols)
-    @@event_symbols = event_symbols
+    @event_symbols = event_symbols
   end
 
   def self.event_classes
-    @@event_symbols.map { |sym| 
+    @event_symbols.map { |sym|
       Module.const_get(sym.to_s.singularize.camelize)
     }
   end
