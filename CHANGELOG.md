@@ -1,4 +1,4 @@
-[0.2.0 - unreleased]
+[[[0.2.0]] - Feb 23 2015]
 
 * BUGFIX - allow multiple calculators (#11).
 * Included the configuration for the `data` column in the generated Event class
