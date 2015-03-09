@@ -44,15 +44,16 @@ This takes the same attribute list as `rails generate model`, but generates a nu
 
 This is the model that you'd create in a typical Rails application, but here you'll find that we don't do much with it directly.
 
-    class Subscription < ActiveRecord::Base
-      has_many :events, 
-        class_name: 'SubscriptionEvent', 
-        foreign_key: 'subscription_uuid', 
-        primary_key: 'uuid'
+```ruby    
+class Subscription < ActiveRecord::Base
+  has_many :events, 
+    class_name: 'SubscriptionEvent', 
+    foreign_key: 'subscription_uuid', 
+    primary_key: 'uuid'
 
-      validates :uuid, uniqueness: true
-    end
-
+  validates :uuid, uniqueness: true
+end
+```
 `Subscription` holds data in a convenient form, but it's not responsible for changing its own state.  That's the responsiblity of the calculator, using the associated events.
 
 In Event Sourcing parlance, `Subscription` is a "projection", meaning that everything in it can be derived from data and logic that lives elsewhere.
@@ -63,46 +64,51 @@ You might never end up showing this model to end-users, but in fact it's the aut
 
 `SubscriptionEvent` represents a timestamped event associated with a particular `Subscription`.  Each event should be treated as read-only; it's meant to be written once and then never modified.
 
-    class SubscriptionEvent < ActiveRecord::Base
-      include EventSourcedRecord::Event
+```ruby
+class SubscriptionEvent < ActiveRecord::Base
+  include EventSourcedRecord::Event
 
-      serialize :data
+  serialize :data
 
-      belongs_to :subscription, 
-        foreign_key: 'subscription_uuid', primary_key: 'uuid'
+  belongs_to :subscription, 
+    foreign_key: 'subscription_uuid', primary_key: 'uuid'
 
-      event_type :creation do
-        # attributes :user_id
-        #
-        # validates :user_id, presence: true
-      end
-    end
+  event_type :creation do
+    # attributes :user_id
+    #
+    # validates :user_id, presence: true
+  end
+end
+```
 
 ### SubscriptionCalculator
 
 This service class replays the event sequence to build a Subscription record that reflects current state.  You'll flesh it out by adding methods that advance the state of the Subscription for each individual type of event.
 
-    class SubscriptionCalculator < EventSourcedRecord::Calculator
-      events :subscription_events
+```ruby
+class SubscriptionCalculator < EventSourcedRecord::Calculator
+  events :subscription_events
 
-      def advance_creation(event)
+  def advance_creation(event)
 
-      end
-    end
-
+  end
+end
+```
 
 ### SubscriptionEventObserver
 
 You can run `SubscriptionCalculator` yourself whenever you like, but `SubscriptionEventObserver` takes care of a core use-case. It monitors `SubscriptionEvent` (and other event classes, as we'll see) and tells `SubscriptionCalculator` to build or rebuild the `Subscription` every time there's a new event class saved.
 
-    class SubscriptionEventObserver < ActiveRecord::Observer
-      observe :subscription_event
+```ruby
+class SubscriptionEventObserver < ActiveRecord::Observer
+  observe :subscription_event
 
-      def after_create(event)
-        SubscriptionCalculator.new(event).run.save!
-      end
-    end
-    
+  def after_create(event)
+    SubscriptionCalculator.new(event).run.save!
+  end
+end
+```
+
 The generator registers this observer in `config/application.rb`:
 
     config.active_record.observers = :subscription_event_observer
@@ -113,14 +119,15 @@ The Rake file gives you a convenient command to rebuild every
 `Subscription` whenever necessary.  Since you'll be building
 `SubscriptionCalculator` to be idempotent, this will be a fairly safe operation.
 
-    namespace :subscription do
-      task :recalculate => :environment do
-        Subscription.all.each do |subscription| 
-          SubscriptionCalculator.new(subscription).run.save!
-        end
-      end
+```ruby
+namespace :subscription do
+  task :recalculate => :environment do
+    Subscription.all.each do |subscription| 
+      SubscriptionCalculator.new(subscription).run.save!
     end
-
+  end
+end
+```
 ## Creation
 
 The generated code starts you out with a `creation` event, but we'll want to define it to get some use out of it.
@@ -131,50 +138,55 @@ Above, we specified that subscriptions will have `user_id`, `bottles_per_shipmen
 
 Fill out the `event_type` block in `SubscriptionEvent`:
 
-    event_type :creation do
-      attributes :bottles_per_shipment, :bottles_purchased, :user_id
+```ruby
+event_type :creation do
+  attributes :bottles_per_shipment, :bottles_purchased, :user_id
 
-      validates :bottles_per_shipment, presence: true, numericality: true
-      validates :bottles_purchased, presence: true, numericality: true
-      validates :user_id, presence: true
-    end
-    
+  validates :bottles_per_shipment, presence: true, numericality: true
+  validates :bottles_purchased, presence: true, numericality: true
+  validates :user_id, presence: true
+end
+```    
 This lets you build and save events with the attributes `bottles_per_shipment`,
 `bottles_purchased`, and `user_id`, and validates those attributes -- as long as the event type is set by using the auto-generated scope:
 
-    event = SubscriptionEvent.creation.new(
-      bottles_purchased: 6,
-      user_id: current_user.id
-    )
-    puts "Trying to purchase #{event.bottles_purchased} bottles"
-    event.valid?                         # false
-    event.errors[:bottles_per_shipment]  # ["can't be blank", "is not a number"]    
+```ruby
+event = SubscriptionEvent.creation.new(
+  bottles_purchased: 6,
+  user_id: current_user.id
+)
+puts "Trying to purchase #{event.bottles_purchased} bottles"
+event.valid?                         # false
+event.errors[:bottles_per_shipment]  # ["can't be blank", "is not a number"]    
+```
 
 ### Handle the creation in the calculator
 
 Fill out the `advance_creation` method in `SubscriptionCalculator`:
 
-    def advance_creation(event)
-      @subscription.user_id = event.user_id
-      @subscription.bottles_per_shipment = event.bottles_per_shipment
-      @subscription.bottles_left = event.bottles_purchased
-    end
-    
+```ruby
+def advance_creation(event)
+  @subscription.user_id = event.user_id
+  @subscription.bottles_per_shipment = event.bottles_per_shipment
+  @subscription.bottles_left = event.bottles_purchased
+end
+```
 Note that for `user_id` and `bottles_per_shipment` we simply copy the field from the event to the subscription, but in the case of `bottles_purchased`, that is translated to `Subscription#bottles_left`.  This field will go up and down over time.
 
 ### Create a subscription, indirectly
 
 Creating a subscription is a matter of creating the event itself:
 
-    event = SubscriptionEvent.creation.new(
-      bottles_per_shipment: 1,
-      bottles_purchased: 6,
-      user_id: current_user.id
-    )
-    event.save!
-    subscription = Subscription.last
-    puts "Created subscription #{subscription.id}"
-    
+```ruby
+event = SubscriptionEvent.creation.new(
+  bottles_per_shipment: 1,
+  bottles_purchased: 6,
+  user_id: current_user.id
+)
+event.save!
+subscription = Subscription.last
+puts "Created subscription #{subscription.id}"
+```    
 ### What's happening here?
 
 There's a lot going on here.  If you're curious, here's what's happening under the hood:
@@ -192,27 +204,30 @@ This is a lot of indirection, which you don't have to understand right away.  Wh
 
 Occasionally, subscribers will want to change their settings.  Let's say in this case we'll only allow them to change `bottles_per_shipment`.  So we add a new event type in `SubscriptionEvent`:
 
-    event_type :change_settings do
-      attributes :bottles_per_shipment
+```ruby
+event_type :change_settings do
+  attributes :bottles_per_shipment
 
-      validates :bottles_per_shipment, numericality: true
-    end
-    
+  validates :bottles_per_shipment, numericality: true
+end
+```    
 And we add a method to handle this new event type to `SubscriptionCalculator`:
 
-    def advance_change_settings(event)
-      @subscription.bottles_per_shipment = event.bottles_per_shipment
-    end
-
+```ruby
+def advance_change_settings(event)
+  @subscription.bottles_per_shipment = event.bottles_per_shipment
+end
+```
 If we want to change the subscription from the last example from 1 bottle per shipment to 2 bottles per shipment, this looks like this:
 
-    subscription.bottles_per_shipment # 1
-    subscription.events.change_settings.create!(
-      subscription_uuid: subscription.uuid, bottles_per_shipment: 2
-    )
-    subscription.reload
-    subscription.bottles_per_shipment # 2
-    
+```ruby
+subscription.bottles_per_shipment # 1
+subscription.events.change_settings.create!(
+  subscription_uuid: subscription.uuid, bottles_per_shipment: 2
+)
+subscription.reload
+subscription.bottles_per_shipment # 2
+```    
 ## Shipment
 
 We created `SubscriptionEvent` to store events about `Subscription`, but you may find you have other kinds of classes that are like events in that they are time-based and relatively immutable.  Let's say that shipments of shampoo function this way in our system: As soon as they are inserted in the database they are applied against the associated subscription.
@@ -225,26 +240,29 @@ And let's say that everytime a `Shipment` goes out the door, we deduct `Shipment
 
 In `subscription_calculator.rb` we make two changes.  First, we add `:shipments` to `events`, which tells the calculator to include `Shipment` as an event that needs to be considered.  Then we add an `advance_shipment` method to handle each associated `Shipment`.
 
-    class SubscriptionCalculator < EventSourcedRecord::Calculator
-      events :subscription_events, :shipments
+```ruby
+class SubscriptionCalculator < EventSourcedRecord::Calculator
+  events :subscription_events, :shipments
       
-      # Other methods omitted
+  # Other methods omitted
 
-      def advance_shipment(shipment)
-        @subscription.bottles_left -= shipment.num_bottles
-      end
-    end
-    
+  def advance_shipment(shipment)
+    @subscription.bottles_left -= shipment.num_bottles
+  end
+end
+```  
 In `subscription_event_observer.rb`, we add `:shipment` to `observer`, so the observer will know to fire when we create a shipment.
 
-    class SubscriptionEventObserver < ActiveRecord::Observer
-      observe :subscription_event, :shipment
+```ruby
+class SubscriptionEventObserver < ActiveRecord::Observer
+  observe :subscription_event, :shipment
 
-      def after_create(event)
-        SubscriptionCalculator.new(event).run.save!
-      end
-    end
-    
+  def after_create(event)
+    SubscriptionCalculator.new(event).run.save!
+  end
+end
+```
+
 Note that `SubscriptionEventObserver#after_create` didn't change.  When a `Shipment` is created, `after_create` will treat that `Shipment` like another type of event.
 
 ## About calculators
@@ -286,9 +304,9 @@ Remember, `SubscriptionCalculator` is idempotent, so this process will fix all t
 ## Reporting
 
 Because `SubscriptionCalculator` rebuilds a record in sequence, it's a piece of cake to only partially rebuild up to a certain time, which can save a lot of time in generating retrospective reports:
-
-    calculator = SubscriptionCalculator.new(subscription)
-    sub_at_end_of_year = calculator.run(last_event_time: Date.new(2014,12,31))
-    
+```ruby
+calculator = SubscriptionCalculator.new(subscription)
+sub_at_end_of_year = calculator.run(last_event_time: Date.new(2014,12,31))
+```
 Note that the returned instance is un-saved, and shouldn't be saved to `subscriptions`, but it's now a piece of cake to take those values and send them to whatever reporting system you have in place.
 
