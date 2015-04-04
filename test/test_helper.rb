@@ -84,6 +84,9 @@ class SubscriptionEvent < ActiveRecord::Base
 
     validates :bottles_per_shipment, numericality: true
   end
+
+  event_type :blank do
+  end
 end
 
 class Subscription < ActiveRecord::Base

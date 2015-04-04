@@ -136,4 +136,9 @@ class EventSourcedRecord::EventTest < MiniTest::Unit::TestCase
 
     assert_equal(Time.new(2003, 1, 24, 11, 33), event.occurred_at)
   end
+
+  def test_blank_event_type_is_okay
+    event = SubscriptionEvent.blank.new
+    assert event.valid?
+  end
 end

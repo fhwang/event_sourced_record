@@ -7,6 +7,7 @@ class EventSourcedRecord::Event::EventTypeConfig
 
   def initialize
     @_validators = Hash.new { |h,k| h[k] = [] }
+    @attributes = []
   end
 
   def attributes(*attrs)
