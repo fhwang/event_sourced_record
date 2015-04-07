@@ -147,6 +147,9 @@ event_type :creation do
   validates :user_id, presence: true
 end
 ```    
+
+> If you are using mass-assignment protection, which is on by default in Rails 3.2, you may want to make these attributes mass-assignable with `attr_accessible`.
+
 This lets you build and save events with the attributes `bottles_per_shipment`,
 `bottles_purchased`, and `user_id`, and validates those attributes -- as long as the event type is set by using the auto-generated scope:
 
