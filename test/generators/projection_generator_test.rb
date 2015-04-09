@@ -30,7 +30,9 @@ class EventSourcedRecord::ProjectionGeneratorTest < Rails::Generators::TestCase
     else
       assert_migration("db/migrate/create_subscriptions.rb") do |contents|
         assert_match(/t.integer :user_id/, contents)
+        assert_match(/t.string :uuid/, contents)
         assert_match(/t.timestamps/, contents)
+        assert_match(/add_index :\w*, :uuid, :unique => true/, contents)
       end
     end
   end
